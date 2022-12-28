@@ -211,7 +211,7 @@ namespace ArtifactOfBlindness.Artifact
     public class HIFU_ArtifactOfBlindnessFogSphereController : MonoBehaviour
     {
         public CharacterBody bodyComponent;
-        public float checkInterval = 1f; // change to 0.08f when it works
+        public float checkInterval = 0.1f;
         public float timer;
         public float radius = 30f;
         public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
