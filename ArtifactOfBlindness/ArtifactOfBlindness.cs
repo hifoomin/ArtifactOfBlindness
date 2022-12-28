@@ -107,9 +107,12 @@ namespace ArtifactOfBlindness.Artifact
         {
             if (Instance.ArtifactEnabled)
             {
-                if (body.teamComponent.teamIndex == TeamIndex.Player && body.GetComponent<HIFU_ArtifactOfBlindnessFogSphereController>() == null)
+                if (body.teamComponent.teamIndex == TeamIndex.Player)
                 {
-                    body.gameObject.AddComponent<HIFU_ArtifactOfBlindnessFogSphereController>();
+                    if (body.GetComponent<HIFU_ArtifactOfBlindnessFogSphereController>() == null)
+                    {
+                        body.gameObject.AddComponent<HIFU_ArtifactOfBlindnessFogSphereController>();
+                    }
                 }
             }
         }
@@ -118,10 +121,20 @@ namespace ArtifactOfBlindness.Artifact
         {
             if (sender && sender.HasBuff(regenBuff) || sender.HasBuff(speedBuff) || sender.HasBuff(aspdBuff))
             {
-                args.baseAttackSpeedAdd += 0.35f;
-                args.cooldownMultAdd += 0.35f;
-                args.moveSpeedMultAdd += 1.5f;
-                args.baseRegenAdd += (sender.healthComponent.combinedHealth / 100f) + 5f + 1f * (sender.level - 1);
+                if (sender.name == "BrotherBody(Clone)" || sender.name == "BrotherHurtBody(Clone)")
+                {
+                    args.baseAttackSpeedAdd += Main.attackSpeedBuff.Value * Main.mithrixMultiplier.Value;
+                    args.cooldownMultAdd += Main.cooldownReductionBuff.Value * Main.mithrixMultiplier.Value;
+                    args.moveSpeedMultAdd += Main.moveSpeedBuff.Value * Main.mithrixMultiplier.Value;
+                    args.baseRegenAdd += (sender.healthComponent.combinedHealth * Main.percentRegenBuff.Value * Main.mithrixMultiplier.Value) + Main.flatRegenBuff.Value * Main.mithrixMultiplier.Value + (Main.flatRegenBuff.Value * Main.mithrixMultiplier.Value) / 5f * (sender.level - 1);
+                }
+                else
+                {
+                    args.baseAttackSpeedAdd += Main.attackSpeedBuff.Value;
+                    args.cooldownMultAdd += Main.cooldownReductionBuff.Value;
+                    args.moveSpeedMultAdd += Main.moveSpeedBuff.Value;
+                    args.baseRegenAdd += (sender.healthComponent.combinedHealth * Main.percentRegenBuff.Value) + Main.flatRegenBuff.Value + Main.flatRegenBuff.Value / 5f * (sender.level - 1);
+                }
             }
         }
 
@@ -198,9 +211,9 @@ namespace ArtifactOfBlindness.Artifact
     {
         public GameObject body;
         public CharacterBody bodyComponent;
-        public float radius = 14f;
-        public float checkInterval = 0.05f;
+        public float checkInterval = 0.07f;
         public float timer;
+        public float radius = 14f * 14f;
 
         public void Start()
         {
@@ -222,18 +235,12 @@ namespace ArtifactOfBlindness.Artifact
                         float distance = (cachedBody.transform.position - bodyComponent.corePosition).sqrMagnitude;
                         switch (distance)
                         {
-                            case float n when n >= (radius * radius):
+                            case float n when n >= radius:
                                 AddBuffs(cachedBody);
                                 break;
-                            /*
-                            case float n when n < (radius * radius):
-                                RemoveBuffs(cachedBody);
-                                break;
-                            */
 
                             default:
                                 RemoveBuffs(cachedBody);
-                                // Debug.Log("switch case default ran, this shouldnt be happening");
                                 break;
                         }
                     }
@@ -243,7 +250,8 @@ namespace ArtifactOfBlindness.Artifact
 
         private void AddBuffs(CharacterBody body)
         {
-            if (NetworkServer.active && !body.HasBuff(ArtifactOfBlindness.regenBuff) || !body.HasBuff(ArtifactOfBlindness.speedBuff) || !body.HasBuff(ArtifactOfBlindness.aspdBuff))
+            bool hasAnyBuff = body.HasBuff(ArtifactOfBlindness.regenBuff) || body.HasBuff(ArtifactOfBlindness.speedBuff) || body.HasBuff(ArtifactOfBlindness.aspdBuff);
+            if (!hasAnyBuff)
             {
                 body.AddBuff(ArtifactOfBlindness.regenBuff);
                 body.AddBuff(ArtifactOfBlindness.speedBuff);
@@ -253,7 +261,8 @@ namespace ArtifactOfBlindness.Artifact
 
         private void RemoveBuffs(CharacterBody body)
         {
-            if (NetworkServer.active && body.HasBuff(ArtifactOfBlindness.regenBuff) || body.HasBuff(ArtifactOfBlindness.speedBuff) || body.HasBuff(ArtifactOfBlindness.aspdBuff))
+            bool hasAnyBuff = body.HasBuff(ArtifactOfBlindness.regenBuff) || body.HasBuff(ArtifactOfBlindness.speedBuff) || body.HasBuff(ArtifactOfBlindness.aspdBuff);
+            if (hasAnyBuff)
             {
                 body.RemoveBuff(ArtifactOfBlindness.regenBuff);
                 body.RemoveBuff(ArtifactOfBlindness.speedBuff);

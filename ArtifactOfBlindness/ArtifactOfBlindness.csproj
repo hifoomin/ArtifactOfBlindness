@@ -57,13 +57,21 @@
       <HintPath>libs\ProBuilderMeshOps.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="R2API">
-      <HintPath>libs\R2API.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="R2API.ContentManagement">
+      <HintPath>..\..\..\..\R2API.ContentManagement.dll</HintPath>
+    </Reference>
+    <Reference Include="R2API.Language">
+      <HintPath>..\..\..\..\R2API.Language.dll</HintPath>
+    </Reference>
+    <Reference Include="R2API.RecalculateStats">
+      <HintPath>..\..\..\..\R2API.RecalculateStats.dll</HintPath>
     </Reference>
     <Reference Include="Rewired_Windows_Lib">
       <HintPath>libs\Rewired_Windows_Lib.dll</HintPath>
       <Private>false</Private>
+    </Reference>
+    <Reference Include="RiskOfOptions">
+      <HintPath>..\..\..\..\RiskOfOptions.dll</HintPath>
     </Reference>
     <Reference Include="SimpleJSON">
       <HintPath>libs\SimpleJSON.dll</HintPath>
