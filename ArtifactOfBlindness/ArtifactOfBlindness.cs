@@ -217,7 +217,8 @@ namespace ArtifactOfBlindness.Artifact
         public float radius = 14f;
         public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
         public bool anyEnemiesOutside = false;
-        public Vector3 position;
+        public Vector3 myPosition;
+        public Vector3 enemyPosition;
 
         public void Awake()
         {
@@ -244,22 +245,23 @@ namespace ArtifactOfBlindness.Artifact
                 for (int i = 0; i < CharacterBody.instancesList.Count; i++)
                 {
                     var cachedBody = CharacterBody.instancesList[i];
-                    var enemyPos = cachedBody.transform.position;
-                    foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
-                    {
-                        position = controller.bodyComponent.transform.position;
-                        // this below doesn't run uhhh
-                        if (Vector3.Distance(enemyPos, position) >= radius)
-                        {
-                            anyEnemiesOutside = true;
-                            Main.ABLogger.LogInfo("enemyPos is" + enemyPos);
-                            Main.ABLogger.LogInfo("controller body component transform position is" + position);
-                        }
-
-                        // the idea is to group all spheres and run them on the server
-                    }
                     if (cachedBody && cachedBody.teamComponent.teamIndex != TeamIndex.Player)
                     {
+                        enemyPosition = cachedBody.transform.position;
+                        foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
+                        {
+                            myPosition = controller.bodyComponent.transform.position;
+                            // this below doesn't run uhhh
+                            if (Vector3.Distance(enemyPosition, myPosition) >= radius)
+                            {
+                                anyEnemiesOutside = true;
+                                Main.ABLogger.LogInfo("enemyPosition is" + enemyPosition);
+                                Main.ABLogger.LogInfo("controller body component transform position is" + myPosition);
+                            }
+
+                            // the idea is to group all spheres and run them on the server
+                        }
+
                         if (anyEnemiesOutside)
                         {
                             AddBuffs(cachedBody);
