@@ -254,7 +254,6 @@ namespace ArtifactOfBlindness.Artifact
                             // and I think players check each other on multiplayer (?)
                             myPosition = controller.bodyComponent.transform.position;
                             // both positions are 0, 0, 0 in multiplayer so enemies dont get buffs AAAAAAAA
-                            // this below doesn't run uhhh
                             if (Vector3.Distance(enemyPosition, myPosition) >= radius)
                             {
                                 anyEnemiesOutside = true;
