@@ -6,7 +6,7 @@ using RoR2;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.AddressableAssets;
 using R2API;
-using UnityEngine.Networking;
+using System.Collections.Generic;
 
 namespace ArtifactOfBlindness.Artifact
 {
@@ -109,9 +109,10 @@ namespace ArtifactOfBlindness.Artifact
             {
                 if (body.teamComponent.teamIndex == TeamIndex.Player)
                 {
-                    if (body.GetComponent<HIFU_ArtifactOfBlindnessFogSphereController>() == null)
+                    var fogSphere = body.GetComponent<HIFU_ArtifactOfBlindnessFogSphereController>();
+                    if (fogSphere == null)
                     {
-                        body.gameObject.AddComponent<HIFU_ArtifactOfBlindnessFogSphereController>();
+                        var fogSphereInstance = body.gameObject.AddComponent<HIFU_ArtifactOfBlindnessFogSphereController>();
                     }
                 }
             }
@@ -214,6 +215,17 @@ namespace ArtifactOfBlindness.Artifact
         public float checkInterval = 0.07f;
         public float timer;
         public float radius = 14f * 14f;
+        public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
+
+        public void Awake()
+        {
+            fogList.Add(this);
+        }
+
+        public void OnDestroy()
+        {
+            fogList.Remove(this);
+        }
 
         public void Start()
         {
@@ -227,12 +239,16 @@ namespace ArtifactOfBlindness.Artifact
             if (timer >= checkInterval)
             {
                 timer = 0f;
+                foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
+                {
+                }
                 for (int i = 0; i < CharacterBody.instancesList.Count; i++)
                 {
                     var cachedBody = CharacterBody.instancesList[i];
                     if (cachedBody && cachedBody.teamComponent.teamIndex != TeamIndex.Player)
                     {
                         float distance = (cachedBody.transform.position - bodyComponent.corePosition).sqrMagnitude;
+                        // compare to every fog controller radius or fog controller body position?
                         switch (distance)
                         {
                             case float n when n >= radius:
