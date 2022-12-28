@@ -16,7 +16,7 @@ namespace ArtifactOfBlindness.Artifact
 
         public override string ArtifactLangTokenName => "HIFU_ArtifactOfBlindness";
 
-        public override string ArtifactDescription => "Severely reduce ally vision. Enemies gain increased attack speed, movement speed, regeneration and decreased cooldowns outside one ally's vision.";
+        public override string ArtifactDescription => "Severely reduce ally vision. Enemies gain increased attack speed, movement speed, regeneration and decreased cooldowns outside of any ally's vision.";
 
         public override Sprite ArtifactEnabledIcon => Main.artifactofblindness.LoadAsset<Sprite>("Assets/ArtifactOfBlindness/texArtifactOfBlindnessEnabled.png");
 
@@ -210,13 +210,12 @@ namespace ArtifactOfBlindness.Artifact
 
     public class HIFU_ArtifactOfBlindnessFogSphereController : MonoBehaviour
     {
-        public GameObject body;
         public CharacterBody bodyComponent;
         public float checkInterval = 1f; // change to 0.08f when it works
         public float timer;
         public float radius = 30f;
         public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
-        public bool anyEnemiesOutside = false;
+        public bool anyEnemiesOutside = true;
         public Vector3 myPosition;
         public Vector3 enemyPosition;
 
@@ -232,8 +231,7 @@ namespace ArtifactOfBlindness.Artifact
 
         public void Start()
         {
-            body = gameObject;
-            bodyComponent = body.GetComponent<CharacterBody>();
+            bodyComponent = gameObject.GetComponent<CharacterBody>();
         }
 
         public void FixedUpdate()
@@ -254,15 +252,14 @@ namespace ArtifactOfBlindness.Artifact
                             // and I think players check each other on multiplayer (?)
                             myPosition = controller.bodyComponent.transform.position;
                             // both positions are 0, 0, 0 in multiplayer so enemies dont get buffs AAAAAAAA
-                            if (Vector3.Distance(enemyPosition, myPosition) >= radius)
+                            if (Vector3.Distance(enemyPosition, myPosition) < radius)
                             {
-                                anyEnemiesOutside = true;
-                                Main.ABLogger.LogInfo("enemyPosition is" + enemyPosition);
-                                Main.ABLogger.LogInfo("controller body component transform position is" + myPosition);
+                                anyEnemiesOutside = false;
+                                break;
                             }
                             else
                             {
-                                anyEnemiesOutside = false;
+                                anyEnemiesOutside = true;
                             }
 
                             // the idea is to group all spheres and run them on the server
