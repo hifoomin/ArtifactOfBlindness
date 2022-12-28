@@ -64,8 +64,6 @@ namespace ArtifactOfBlindness
                 ArtifactBase artifact = (ArtifactBase)Activator.CreateInstance(artifactType);
                 artifact.Init(Config);
             }
-
-            On.RoR2.Networking.NetworkManagerSystemSteam.OnClientConnect += (s, u, t) => { };
         }
     }
 }
