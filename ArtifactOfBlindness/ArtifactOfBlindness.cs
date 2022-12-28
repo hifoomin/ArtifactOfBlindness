@@ -212,10 +212,12 @@ namespace ArtifactOfBlindness.Artifact
     {
         public GameObject body;
         public CharacterBody bodyComponent;
-        public float checkInterval = 0.07f;
+        public float checkInterval = 1f; // change to 0.08f when it works
         public float timer;
-        public float radius = 14f * 14f;
+        public float radius = 14f;
         public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
+        public bool anyEnemiesOutside = false;
+        public Vector3 position;
 
         public void Awake()
         {
@@ -239,25 +241,32 @@ namespace ArtifactOfBlindness.Artifact
             if (timer >= checkInterval)
             {
                 timer = 0f;
-                foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
-                {
-                }
                 for (int i = 0; i < CharacterBody.instancesList.Count; i++)
                 {
                     var cachedBody = CharacterBody.instancesList[i];
+                    var enemyPos = cachedBody.transform.position;
+                    foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
+                    {
+                        position = controller.bodyComponent.transform.position;
+                        // this below doesn't run uhhh
+                        if (Vector3.Distance(enemyPos, position) >= radius)
+                        {
+                            anyEnemiesOutside = true;
+                            Main.ABLogger.LogInfo("enemyPos is" + enemyPos);
+                            Main.ABLogger.LogInfo("controller body component transform position is" + position);
+                        }
+
+                        // the idea is to group all spheres and run them on the server
+                    }
                     if (cachedBody && cachedBody.teamComponent.teamIndex != TeamIndex.Player)
                     {
-                        float distance = (cachedBody.transform.position - bodyComponent.corePosition).sqrMagnitude;
-                        // compare to every fog controller radius or fog controller body position?
-                        switch (distance)
+                        if (anyEnemiesOutside)
                         {
-                            case float n when n >= radius:
-                                AddBuffs(cachedBody);
-                                break;
-
-                            default:
-                                RemoveBuffs(cachedBody);
-                                break;
+                            AddBuffs(cachedBody);
+                        }
+                        else
+                        {
+                            RemoveBuffs(cachedBody);
                         }
                     }
                 }

@@ -10,6 +10,7 @@ using BepInEx.Configuration;
 using RiskOfOptions;
 using RiskOfOptions.Options;
 using RiskOfOptions.OptionConfigs;
+using BepInEx.Logging;
 
 namespace ArtifactOfBlindness
 {
@@ -24,7 +25,10 @@ namespace ArtifactOfBlindness
         public const string PluginAuthor = "HIFU";
         public const string PluginName = "ArtifactOfBlindness";
         public const string PluginVersion = "1.1.0";
+
         public static AssetBundle artifactofblindness;
+
+        public static ManualLogSource ABLogger;
 
         public static ConfigEntry<float> moveSpeedBuff;
         public static ConfigEntry<float> attackSpeedBuff;
@@ -35,6 +39,7 @@ namespace ArtifactOfBlindness
 
         public void Awake()
         {
+            ABLogger = base.Logger;
             artifactofblindness = AssetBundle.LoadFromFile(Assembly.GetExecutingAssembly().Location.Replace("ArtifactOfBlindness.dll", "artifactofblindness"));
 
             moveSpeedBuff = Config.Bind("Stats", "Movement Speed Buff", 1.5f, "Decimal. Default is 1.5");
