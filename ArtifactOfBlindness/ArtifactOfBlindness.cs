@@ -214,7 +214,7 @@ namespace ArtifactOfBlindness.Artifact
         public CharacterBody bodyComponent;
         public float checkInterval = 1f; // change to 0.08f when it works
         public float timer;
-        public float radius = 14f;
+        public float radius = 30f;
         public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
         public bool anyEnemiesOutside = false;
         public Vector3 myPosition;
@@ -250,13 +250,20 @@ namespace ArtifactOfBlindness.Artifact
                         enemyPosition = cachedBody.transform.position;
                         foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
                         {
+                            // todo: remove useless fucks like birdsharks, pots and the like from getting checked (idk how)
+                            // and I think players check each other on multiplayer (?)
                             myPosition = controller.bodyComponent.transform.position;
+                            // both positions are 0, 0, 0 in multiplayer so enemies dont get buffs AAAAAAAA
                             // this below doesn't run uhhh
                             if (Vector3.Distance(enemyPosition, myPosition) >= radius)
                             {
                                 anyEnemiesOutside = true;
                                 Main.ABLogger.LogInfo("enemyPosition is" + enemyPosition);
                                 Main.ABLogger.LogInfo("controller body component transform position is" + myPosition);
+                            }
+                            else
+                            {
+                                anyEnemiesOutside = false;
                             }
 
                             // the idea is to group all spheres and run them on the server
