@@ -249,9 +249,7 @@ namespace ArtifactOfBlindness.Artifact
                         foreach (HIFU_ArtifactOfBlindnessFogSphereController controller in fogList)
                         {
                             // todo: remove useless fucks like birdsharks, pots and the like from getting checked (idk how)
-                            // and I think players check each other on multiplayer (?)
                             myPosition = controller.bodyComponent.transform.position;
-                            // both positions are 0, 0, 0 in multiplayer so enemies dont get buffs AAAAAAAA
                             if (Vector3.Distance(enemyPosition, myPosition) < radius)
                             {
                                 anyEnemiesOutside = false;

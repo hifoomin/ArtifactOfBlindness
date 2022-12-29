@@ -17,6 +17,7 @@ namespace ArtifactOfBlindness
     [BepInDependency(LanguageAPI.PluginGUID)]
     [BepInDependency(RecalculateStatsAPI.PluginGUID)]
     [BepInDependency(R2APIContentManager.PluginGUID)]
+    [BepInDependency("com.rune580.riskofoptions")]
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     public class Main : BaseUnityPlugin
     {
