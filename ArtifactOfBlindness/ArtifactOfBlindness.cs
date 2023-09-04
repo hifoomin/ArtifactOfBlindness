@@ -36,8 +36,24 @@ namespace ArtifactOfBlindness.Artifact
         public static BuffDef aspdBuff;
         private static readonly string[] blacklistedScenes = { "artifactworld", "crystalworld", "eclipseworld", "infinitetowerworld", "intro", "loadingbasic", "lobby", "logbook", "mysteryspace", "outro", "PromoRailGunner", "PromoVoidSurvivor", "splash", "title", "voidoutro" };
 
+        public static GameObject indicator;
+
         public override void Init(ConfigFile config)
         {
+            indicator = PrefabAPI.InstantiateClone(Addressables.LoadAssetAsync<GameObject>("RoR2/Base/NearbyDamageBonus/NearbyDamageBonusIndicator.prefab").WaitForCompletion(), "Fog Visual", true);
+            var radiusTrans = indicator.transform.Find("Radius, Spherical");
+            radiusTrans.localScale = new Vector3(Main.fogRadius.Value * 2f, Main.fogRadius.Value * 2f, Main.fogRadius.Value * 2f);
+
+            var indicatorMat = Object.Instantiate(Addressables.LoadAssetAsync<Material>("RoR2/Base/NearbyDamageBonus/matNearbyDamageBonusRangeIndicator.mat").WaitForCompletion());
+            var cloudTexture = Addressables.LoadAssetAsync<Texture2D>("RoR2/Base/Common/PerlinNoise.png").WaitForCompletion();
+            indicatorMat.SetTexture("_MainTex", cloudTexture);
+            indicatorMat.SetTexture("_Cloud1Tex", cloudTexture);
+            indicatorMat.SetColor("_TintColor", Main.fogIndicatorColor.Value);
+
+            radiusTrans.GetComponent<MeshRenderer>().material = indicatorMat;
+
+            PrefabAPI.RegisterNetworkPrefab(indicator);
+
             ppHolder = new("HIFU_ArtifactOfBlindnessPP");
             Object.DontDestroyOnLoad(ppHolder);
             ppHolder.layer = LayerIndex.postProcess.intVal;
@@ -52,28 +68,32 @@ namespace ArtifactOfBlindness.Artifact
             ppProfile.name = "HIFU_ArtifactOfBlindness";
 
             fog = ppProfile.AddSettings<RampFog>();
+            fog.enabled.value = Main.enableFog.Value;
             fog.SetAllOverridesTo(true);
-            fog.fogColorStart.value = new Color32(45, 45, 53, 165);
-            fog.fogColorMid.value = new Color32(44, 44, 56, 255);
-            fog.fogColorEnd.value = new Color32(44, 44, 56, 255);
+            fog.fogColorStart.value = Main.fogColorStart.Value;
+            fog.fogColorMid.value = Main.fogColorMid.Value;
+            fog.fogColorEnd.value = Main.fogColorEnd.Value;
             fog.skyboxStrength.value = 0.02f;
             fog.fogPower.value = 0.35f;
-            fog.fogIntensity.value = 0.99f;
+            fog.fogIntensity.value = Main.fogIntensity.Value;
             fog.fogZero.value = 0f;
             fog.fogOne.value = 0.05f;
 
             ab = ppProfile.AddSettings<ChromaticAberration>();
+            ab.enabled.value = Main.enableAberration.Value;
             ab.SetAllOverridesTo(true);
             ab.intensity.value = 0.15f;
             ab.fastMode.value = false;
 
             dof = ppProfile.AddSettings<DepthOfField>();
+            dof.enabled.value = Main.enableDoF.Value;
             dof.SetAllOverridesTo(true);
             dof.aperture.value = 5f;
-            dof.focalLength.value = 68.31f;
+            dof.focalLength.value = Main.depthOfFieldStrength.Value;
             dof.focusDistance.value = 5f;
 
             grain = ppProfile.AddSettings<Grain>();
+            grain.enabled.value = Main.enableGrain.Value;
             grain.SetAllOverridesTo(true);
             grain.intensity.value = 0.09f;
             grain.size.value = 4.57f;
@@ -81,6 +101,7 @@ namespace ArtifactOfBlindness.Artifact
             grain.colored.value = true;
 
             vn = ppProfile.AddSettings<Vignette>();
+            vn.enabled.value = Main.enableVignette.Value;
             vn.SetAllOverridesTo(true);
             vn.intensity.value = 0.15f;
             vn.roundness.value = 1f;
@@ -177,7 +198,8 @@ namespace ArtifactOfBlindness.Artifact
             var sceneName = SceneManager.GetActiveScene().name;
             if (!blacklistedScenes.Contains(sceneName))
             {
-                ppVolume.weight = 0f;
+                if (ppVolume)
+                    ppVolume.weight = 0f;
             }
         }
 
@@ -212,12 +234,18 @@ namespace ArtifactOfBlindness.Artifact
     {
         public CharacterBody bodyComponent;
         public float checkInterval = 0.1f;
+        public float colorUpdateInterval = 2f;
         public float timer;
-        public float radius = 30f;
+        public float timer2;
+        public float radius = Main.fogRadius.Value;
         public static List<HIFU_ArtifactOfBlindnessFogSphereController> fogList = new();
         public bool anyEnemiesOutside = true;
         public Vector3 myPosition;
         public Vector3 enemyPosition;
+        public GameObject radiusIndicator;
+        public Light light = null;
+        public Material indicatorMat;
+        public Transform radiusTrans;
 
         public void Awake()
         {
@@ -232,14 +260,58 @@ namespace ArtifactOfBlindness.Artifact
         public void Start()
         {
             bodyComponent = gameObject.GetComponent<CharacterBody>();
+
+            enableRadiusIndicator = Main.fogIndicator.Value;
+            radiusTrans = radiusIndicator.transform.GetChild(1);
+            radiusTrans.localScale = new Vector3(Main.fogRadius.Value * 2f, Main.fogRadius.Value * 2f, Main.fogRadius.Value * 2f);
+            indicatorMat = radiusTrans.GetComponent<MeshRenderer>().sharedMaterial;
+
+            if (light == null)
+            {
+                light = gameObject.AddComponent<Light>();
+                light.color = Main.glowColor.Value;
+                light.range = Main.glowRadius.Value;
+                light.intensity = Main.glowIntensity.Value;
+                light.type = LightType.Point;
+                light.shadows = LightShadows.None;
+            }
         }
 
         public void FixedUpdate()
         {
             timer += Time.fixedDeltaTime;
+            timer2 += Time.fixedDeltaTime;
+            if (timer2 >= colorUpdateInterval)
+            {
+                timer2 = 0f;
+
+                light.color = Main.glowColor.Value;
+                light.range = Main.glowRadius.Value;
+                light.intensity = Main.glowIntensity.Value;
+                light.type = LightType.Point;
+                light.shadows = LightShadows.None;
+
+                enableRadiusIndicator = Main.fogIndicator.Value;
+
+                radiusTrans.localScale = new Vector3(Main.fogRadius.Value * 2f, Main.fogRadius.Value * 2f, Main.fogRadius.Value * 2f);
+
+                indicatorMat.SetColor("_TintColor", Main.fogIndicatorColor.Value);
+
+                ArtifactOfBlindness.fog.enabled.value = Main.enableFog.Value;
+                ArtifactOfBlindness.dof.enabled.value = Main.enableDoF.Value;
+                ArtifactOfBlindness.grain.enabled.value = Main.enableGrain.Value;
+                ArtifactOfBlindness.ab.enabled.value = Main.enableAberration.Value;
+                ArtifactOfBlindness.vn.enabled.value = Main.enableVignette.Value;
+                ArtifactOfBlindness.fog.fogColorStart.value = Main.fogColorStart.Value;
+                ArtifactOfBlindness.fog.fogColorMid.value = Main.fogColorMid.Value;
+                ArtifactOfBlindness.fog.fogColorEnd.value = Main.fogColorEnd.Value;
+                ArtifactOfBlindness.fog.fogIntensity.value = Main.fogIntensity.Value;
+                ArtifactOfBlindness.dof.focalLength.value = Main.depthOfFieldStrength.Value;
+            }
             if (timer >= checkInterval)
             {
                 timer = 0f;
+
                 for (int i = 0; i < CharacterBody.instancesList.Count; i++)
                 {
                     var cachedBody = CharacterBody.instancesList[i];
@@ -295,6 +367,30 @@ namespace ArtifactOfBlindness.Artifact
                 body.RemoveBuff(ArtifactOfBlindness.regenBuff);
                 body.RemoveBuff(ArtifactOfBlindness.speedBuff);
                 body.RemoveBuff(ArtifactOfBlindness.aspdBuff);
+            }
+        }
+
+        private bool enableRadiusIndicator
+        {
+            get
+            {
+                return radiusIndicator;
+            }
+            set
+            {
+                if (enableRadiusIndicator != value)
+                {
+                    if (value)
+                    {
+                        radiusIndicator = Instantiate(ArtifactOfBlindness.indicator, bodyComponent.corePosition, Quaternion.identity);
+                        radiusIndicator.GetComponent<NetworkedBodyAttachment>().AttachToGameObjectAndSpawn(gameObject, null);
+                    }
+                    else
+                    {
+                        Object.Destroy(radiusIndicator);
+                        radiusIndicator = null;
+                    }
+                }
             }
         }
     }
